@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Kausachun Moquegua</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+
+<!-- ── LOGIN ──────────────────────────────────────────────────────────── -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo"><span>K</span>AUSACHUN</div>
+    <p class="login-sub">Panel de Administración</p>
+    <form id="loginForm">
+      <input type="password" id="loginPwd" placeholder="Contraseña de acceso" required autocomplete="current-password"/>
+      <button type="submit" class="btn-primary">Ingresar</button>
+      <p class="login-error" id="loginError"></p>
+    </form>
+  </div>
+</div>
+
+<!-- ── APP ────────────────────────────────────────────────────────────── -->
+<div id="app" style="display:none">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><span>K</span>AUSACHUN <small>Admin</small></div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-view="plan">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 1.5L18.5 9H13V3.5zM6 20V4h5v7h7v9H6z"/></svg>
+        Plan de Gobierno
+      </button>
+      <button class="nav-item" data-view="news">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.89 2-2V5c0-1.11-.89-2-2-2zm0 5h-2V5h2v3zM4 19h16v2H4z"/></svg>
+        Noticias
+      </button>
+      <button class="nav-item" data-view="videos">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+        Videos
+      </button>
+      <button class="nav-item" data-view="contacts">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+        Contactos
+        <span class="badge" id="unreadBadge" style="display:none"></span>
+      </button>
+    </nav>
+    <button class="logout-btn" id="logoutBtn">Cerrar sesión</button>
+    <a href="/" target="_blank" class="view-site-btn">Ver sitio →</a>
+  </aside>
+
+  <main class="main-content">
+
+    <!-- DASHBOARD -->
+    <div id="view-dashboard" class="view active">
+      <div class="view-header">
+        <h1>Dashboard</h1>
+        <p>Bienvenido al panel de Kausachun Moquegua</p>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon green">📰</div>
+          <div><strong id="statNews">–</strong><span>Noticias</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue">🎬</div>
+          <div><strong id="statVideos">–</strong><span>Videos</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon gold">✉️</div>
+          <div><strong id="statContacts">–</strong><span>Mensajes</span></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon" id="planStatIcon">📄</div>
+          <div><strong id="statPlan">–</strong><span>Plan de Gobierno</span></div>
+        </div>
+      </div>
+      <div class="dash-hints">
+        <h3>Acciones rápidas</h3>
+        <div class="hints-grid">
+          <button class="hint-card" data-view="plan">
+            <strong>Subir Plan de Gobierno</strong>
+            <p>Carga el PDF o texto del plan para activar el chatbot.</p>
+          </button>
+          <button class="hint-card" data-view="news">
+            <strong>Publicar Noticia</strong>
+            <p>Agrega notas de prensa, comunicados y actividades del movimiento.</p>
+          </button>
+          <button class="hint-card" data-view="videos">
+            <strong>Agregar Video</strong>
+            <p>Incrusta videos de YouTube sobre el candidato y el movimiento.</p>
+          </button>
+          <button class="hint-card" data-view="contacts">
+            <strong>Ver Mensajes</strong>
+            <p>Revisa los mensajes enviados desde el formulario de contacto.</p>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAN DE GOBIERNO -->
+    <div id="view-plan" class="view">
+      <div class="view-header">
+        <h1>Plan de Gobierno</h1>
+        <p>Sube el PDF o texto del plan. El chatbot usará este contenido para responder preguntas.</p>
+      </div>
+
+      <div id="planCurrentInfo" class="info-card" style="display:none">
+        <div class="info-card-body">
+          <p class="info-label">Plan actual</p>
+          <strong id="planFilename"></strong>
+          <p id="planDate"></p>
+          <p id="planChars"></p>
+          <div class="plan-preview-box">
+            <strong>Vista previa:</strong>
+            <p id="planPreview"></p>
+          </div>
+        </div>
+        <button class="btn-danger-sm" id="deletePlanBtn">Eliminar plan</button>
+      </div>
+
+      <div class="card">
+        <h3>Subir nuevo plan</h3>
+        <div class="tabs">
+          <button class="tab active" data-tab="file">Archivo (PDF/TXT)</button>
+          <button class="tab" data-tab="text">Texto directo</button>
+        </div>
+
+        <div id="tab-file" class="tab-content active">
+          <form id="planFileForm">
+            <div class="file-drop" id="fileDrop">
+              <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/></svg>
+              <p>Arrastra un PDF o TXT aquí</p>
+              <span>o</span>
+              <label class="btn-secondary" for="planFile">Seleccionar archivo</label>
+              <input type="file" id="planFile" name="file" accept=".pdf,.txt" style="display:none"/>
+              <p class="file-name" id="fileName"></p>
+            </div>
+            <button type="submit" class="btn-primary" id="uploadPlanBtn" disabled>Subir Plan</button>
+          </form>
+        </div>
+
+        <div id="tab-text" class="tab-content">
+          <form id="planTextForm">
+            <label class="form-label">Pega el texto del plan de gobierno:</label>
+            <textarea id="planTextArea" rows="12" placeholder="Pega aquí el contenido del plan de gobierno…"></textarea>
+            <button type="submit" class="btn-primary">Guardar Plan</button>
+          </form>
+        </div>
+
+        <p class="form-status" id="planStatus"></p>
+      </div>
+    </div>
+
+    <!-- NOTICIAS -->
+    <div id="view-news" class="view">
+      <div class="view-header between">
+        <div>
+          <h1>Noticias</h1>
+          <p>Gestiona las notas y comunicados del movimiento.</p>
+        </div>
+        <button class="btn-primary" id="newNewsBtn">+ Nueva Noticia</button>
+      </div>
+
+      <div id="newsFormCard" class="card" style="display:none">
+        <h3 id="newsFormTitle">Nueva Noticia</h3>
+        <form id="newsForm">
+          <input type="hidden" id="newsId"/>
+          <div class="form-grid-2">
+            <div class="form-group full">
+              <label class="form-label">Título *</label>
+              <input type="text" id="newsTitle" required maxlength="300"/>
+            </div>
+            <div class="form-group full">
+              <label class="form-label">Resumen (aparece en la lista)</label>
+              <input type="text" id="newsExcerpt" maxlength="300" placeholder="Breve descripción de la noticia"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">URL de imagen (opcional)</label>
+              <input type="url" id="newsImage" placeholder="https://..."/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estado</label>
+              <select id="newsPublished">
+                <option value="1">Publicado</option>
+                <option value="0">Borrador</option>
+              </select>
+            </div>
+            <div class="form-group full">
+              <label class="form-label">Contenido *</label>
+              <textarea id="newsContent" rows="10" required placeholder="Escribe el contenido completo de la noticia…"></textarea>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" id="cancelNewsBtn">Cancelar</button>
+            <button type="submit" class="btn-primary">Guardar</button>
+          </div>
+          <p class="form-status" id="newsFormStatus"></p>
+        </form>
+      </div>
+
+      <div id="newsList"></div>
+    </div>
+
+    <!-- VIDEOS -->
+    <div id="view-videos" class="view">
+      <div class="view-header between">
+        <div>
+          <h1>Videos</h1>
+          <p>Agrega videos de YouTube para mostrarlos en el sitio.</p>
+        </div>
+        <button class="btn-primary" id="newVideoBtn">+ Agregar Video</button>
+      </div>
+
+      <div id="videoFormCard" class="card" style="display:none">
+        <h3 id="videoFormTitle">Nuevo Video</h3>
+        <form id="videoForm">
+          <input type="hidden" id="videoId"/>
+          <div class="form-grid-2">
+            <div class="form-group full">
+              <label class="form-label">Título *</label>
+              <input type="text" id="videoTitle" required maxlength="300"/>
+            </div>
+            <div class="form-group full">
+              <label class="form-label">URL de YouTube *</label>
+              <input type="text" id="videoUrl" required placeholder="https://www.youtube.com/watch?v=..."/>
+            </div>
+            <div class="form-group full">
+              <label class="form-label">Descripción</label>
+              <input type="text" id="videoDesc" maxlength="300"/>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Estado</label>
+              <select id="videoPublished">
+                <option value="1">Publicado</option>
+                <option value="0">Oculto</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn-secondary" id="cancelVideoBtn">Cancelar</button>
+            <button type="submit" class="btn-primary">Guardar</button>
+          </div>
+          <p class="form-status" id="videoFormStatus"></p>
+        </form>
+      </div>
+
+      <div id="videosList"></div>
+    </div>
+
+    <!-- CONTACTOS -->
+    <div id="view-contacts" class="view">
+      <div class="view-header">
+        <h1>Mensajes de Contacto</h1>
+        <p>Mensajes enviados desde el formulario del sitio web.</p>
+      </div>
+      <div id="contactsList"></div>
+    </div>
+
+  </main>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>

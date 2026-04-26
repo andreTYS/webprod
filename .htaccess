@@ -1,0 +1,20 @@
+Options -Indexes
+DirectoryIndex index.html index.php
+
+# Proteger base de datos y archivos internos
+<FilesMatch "\.(db|sqlite|sqlite3)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Proteger config.php de lectura directa (PHP lo ejecuta, no lo expone)
+<Files "config.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
+
+# Proteger helper de auth
+<Files "_auth.php">
+    Order Allow,Deny
+    Deny from all
+</Files>
