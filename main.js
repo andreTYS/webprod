@@ -18,7 +18,7 @@ document.querySelectorAll('.nav-links a').forEach(a =>
 async function loadNews() {
   const grid = document.getElementById('newsGrid');
   try {
-    const res  = await fetch('/api/news');
+    const res  = await fetch('/api/news.php');
     const data = await res.json();
     if (!data.length) {
       grid.innerHTML = '<div class="empty-state">Pronto publicaremos noticias del movimiento.</div>';
@@ -43,7 +43,7 @@ async function loadNews() {
 
 async function openNewsModal(id) {
   try {
-    const res  = await fetch(`/api/news/${id}`);
+    const res  = await fetch(`/api/news.php?id=${id}`);
     const n    = await res.json();
     const modal = document.getElementById('newsModal');
     const img   = document.getElementById('modalImg');
@@ -73,7 +73,7 @@ function closeModal() {
 async function loadVideos() {
   const grid = document.getElementById('videosGrid');
   try {
-    const res  = await fetch('/api/videos');
+    const res  = await fetch('/api/videos.php');
     const data = await res.json();
     if (!data.length) {
       grid.innerHTML = '<div class="empty-state">Pronto publicaremos videos del movimiento.</div>';
@@ -118,7 +118,7 @@ document.getElementById('contactForm').addEventListener('submit', async e => {
   };
 
   try {
-    const res  = await fetch('/api/contact', {
+    const res  = await fetch('/api/contact.php', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify(body)
     });
@@ -186,7 +186,7 @@ async function sendChatMessage() {
   const typingId = appendTyping();
 
   try {
-    const res = await fetch('/api/chatbot', {
+    const res = await fetch('/api/chatbot.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: msg, history: chatHistory.slice(-8) })

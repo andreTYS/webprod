@@ -1,20 +1,15 @@
-/* ── Auth ──────────────────────────────────────────────────────────────── */
-let token = localStorage.getItem('kausachun_token') || '';
-
+/* ── API helper (usa cookies de sesión PHP) ────────────────────────────── */
 async function api(method, path, body, isFormData = false) {
-  const opts = {
-    method,
-    headers: { Authorization: 'Bearer ' + token }
-  };
+  const opts = { method, credentials: 'same-origin' };
   if (body) {
     if (isFormData) {
       opts.body = body;
     } else {
-      opts.headers['Content-Type'] = 'application/json';
+      opts.headers = { 'Content-Type': 'application/json' };
       opts.body = JSON.stringify(body);
     }
   }
-  const res = await fetch('/api/admin' + path, opts);
+  const res = await fetch('/admin/api' + path, opts);
   if (res.status === 401) { doLogout(); return null; }
   return res.json();
 }
@@ -22,35 +17,28 @@ async function api(method, path, body, isFormData = false) {
 /* ── Login ─────────────────────────────────────────────────────────────── */
 document.getElementById('loginForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const pwd = document.getElementById('loginPwd').value;
   const err = document.getElementById('loginError');
   err.textContent = '';
   try {
-    const res = await fetch('/api/admin/login', {
+    const res = await fetch('/admin/api/login.php', {
       method: 'POST',
+      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pwd })
+      body: JSON.stringify({ password: document.getElementById('loginPwd').value })
     });
     const data = await res.json();
-    if (res.ok) {
-      token = data.token;
-      localStorage.setItem('kausachun_token', token);
-      showApp();
-    } else {
-      err.textContent = data.error || 'Error de autenticación';
-    }
+    if (res.ok) showApp();
+    else err.textContent = data.error || 'Error de autenticación';
   } catch {
     err.textContent = 'No se pudo conectar al servidor';
   }
 });
 
 async function checkAuth() {
-  if (!token) return;
-  const data = await fetch('/api/admin/me', {
-    headers: { Authorization: 'Bearer ' + token }
-  });
-  if (data.status === 401) { token = ''; localStorage.removeItem('kausachun_token'); }
-  else showApp();
+  try {
+    const res = await fetch('/admin/api/me.php', { credentials: 'same-origin' });
+    if (res.ok) showApp();
+  } catch { /* stay on login */ }
 }
 
 function showApp() {
@@ -60,9 +48,8 @@ function showApp() {
   loadStats();
 }
 
-function doLogout() {
-  token = '';
-  localStorage.removeItem('kausachun_token');
+async function doLogout() {
+  await fetch('/admin/api/logout.php', { credentials: 'same-origin' });
   document.getElementById('app').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
 }
@@ -77,11 +64,9 @@ function navigateTo(view) {
   document.querySelector(`[data-view="${view}"]`)?.classList.add('active');
   loaders[view]?.();
 }
-
 document.querySelectorAll('[data-view]').forEach(el =>
   el.addEventListener('click', () => navigateTo(el.dataset.view))
 );
-
 const loaders = {
   dashboard: loadStats,
   plan:      loadPlan,
@@ -92,7 +77,7 @@ const loaders = {
 
 /* ── Stats ─────────────────────────────────────────────────────────────── */
 async function loadStats() {
-  const data = await api('GET', '/stats');
+  const data = await api('GET', '/stats.php');
   if (!data) return;
   document.getElementById('statNews').textContent     = data.news;
   document.getElementById('statVideos').textContent   = data.videos;
@@ -106,23 +91,22 @@ async function loadStats() {
 
 /* ── Plan de Gobierno ───────────────────────────────────────────────────── */
 async function loadPlan() {
-  const data = await api('GET', '/plan');
+  const data = await api('GET', '/plan.php');
   const info = document.getElementById('planCurrentInfo');
   if (data) {
     info.style.display = 'flex';
     document.getElementById('planFilename').textContent = '📄 ' + data.filename;
     document.getElementById('planDate').textContent     = 'Subido: ' + formatDate(data.uploaded_at);
-    document.getElementById('planChars').textContent    = `Contenido: ${data.chars.toLocaleString()} caracteres`;
+    document.getElementById('planChars').textContent    = `Contenido: ${Number(data.chars).toLocaleString()} caracteres`;
     document.getElementById('planPreview').textContent  = data.preview + '…';
   } else {
     info.style.display = 'none';
   }
 }
 
-// File upload tab
-const planFile     = document.getElementById('planFile');
+const planFile      = document.getElementById('planFile');
 const uploadPlanBtn = document.getElementById('uploadPlanBtn');
-const fileDrop     = document.getElementById('fileDrop');
+const fileDrop      = document.getElementById('fileDrop');
 
 planFile.addEventListener('change', () => {
   const f = planFile.files[0];
@@ -133,8 +117,7 @@ planFile.addEventListener('change', () => {
 ['dragover','dragleave','drop'].forEach(evt =>
   fileDrop.addEventListener(evt, e => {
     e.preventDefault();
-    if (evt === 'dragover') fileDrop.classList.add('dragover');
-    else fileDrop.classList.remove('dragover');
+    fileDrop.classList.toggle('dragover', evt === 'dragover');
     if (evt === 'drop') {
       const f = e.dataTransfer.files[0];
       if (f) {
@@ -149,18 +132,17 @@ fileDrop.addEventListener('click', () => planFile.click());
 
 document.getElementById('planFileForm').addEventListener('submit', async e => {
   e.preventDefault();
-  const status = document.getElementById('planStatus');
   const f = planFile.files[0];
   if (!f) return;
   uploadPlanBtn.disabled = true;
   uploadPlanBtn.textContent = 'Subiendo…';
   const fd = new FormData();
   fd.append('file', f);
-  const data = await api('POST', '/plan', fd, true);
+  const data = await api('POST', '/plan.php', fd, true);
   uploadPlanBtn.disabled = false;
   uploadPlanBtn.textContent = 'Subir Plan';
   if (data?.success) {
-    setStatus('planStatus', `✅ Plan cargado (${data.chars.toLocaleString()} caracteres)`, 'green');
+    setStatus('planStatus', `✅ Plan cargado (${Number(data.chars).toLocaleString()} caracteres)`, 'green');
     loadPlan(); loadStats();
     planFile.value = '';
     document.getElementById('fileName').textContent = '';
@@ -173,9 +155,11 @@ document.getElementById('planTextForm').addEventListener('submit', async e => {
   e.preventDefault();
   const content = document.getElementById('planTextArea').value.trim();
   if (!content) return;
-  const data = await api('POST', '/plan', { content });
+  const fd = new FormData();
+  fd.append('content', content);
+  const data = await api('POST', '/plan.php', fd, true);
   if (data?.success) {
-    setStatus('planStatus', `✅ Plan guardado (${data.chars.toLocaleString()} caracteres)`, 'green');
+    setStatus('planStatus', `✅ Plan guardado (${Number(data.chars).toLocaleString()} caracteres)`, 'green');
     document.getElementById('planTextArea').value = '';
     loadPlan(); loadStats();
   } else {
@@ -185,11 +169,10 @@ document.getElementById('planTextForm').addEventListener('submit', async e => {
 
 document.getElementById('deletePlanBtn').addEventListener('click', async () => {
   if (!confirm('¿Eliminar el plan de gobierno actual?')) return;
-  await api('DELETE', '/plan');
+  await api('DELETE', '/plan.php');
   loadPlan(); loadStats();
 });
 
-// Tabs
 document.querySelectorAll('.tab').forEach(tab =>
   tab.addEventListener('click', () => {
     const t = tab.dataset.tab;
@@ -206,7 +189,7 @@ let editingNewsId = null;
 async function loadNews() {
   const list = document.getElementById('newsList');
   list.innerHTML = '<div class="loading-msg">Cargando…</div>';
-  const data = await api('GET', '/news');
+  const data = await api('GET', '/news.php');
   if (!data?.length) { list.innerHTML = '<div class="empty-msg">No hay noticias. Crea la primera.</div>'; return; }
   list.innerHTML = data.map(n => `
     <div class="list-item">
@@ -233,15 +216,14 @@ document.getElementById('newNewsBtn').addEventListener('click', () => {
   document.getElementById('newsFormCard').style.display = '';
   document.getElementById('newsFormCard').scrollIntoView({ behavior: 'smooth' });
 });
-
 document.getElementById('cancelNewsBtn').addEventListener('click', () => {
   document.getElementById('newsFormCard').style.display = 'none';
   editingNewsId = null;
 });
 
 async function editNews(id) {
-  const all  = await api('GET', '/news');
-  const item = all.find(x => x.id === id);
+  const all  = await api('GET', '/news.php');
+  const item = all?.find(x => x.id === id);
   if (!item) return;
   editingNewsId = id;
   document.getElementById('newsFormTitle').textContent = 'Editar Noticia';
@@ -264,19 +246,12 @@ document.getElementById('newsForm').addEventListener('submit', async e => {
     image_url: document.getElementById('newsImage').value,
     published: document.getElementById('newsPublished').value === '1'
   };
-  let data;
-  if (editingNewsId) {
-    data = await api('PUT', '/news/' + editingNewsId, body);
-  } else {
-    data = await api('POST', '/news', body);
-  }
+  const path = editingNewsId ? `/news.php?id=${editingNewsId}` : '/news.php';
+  const meth = editingNewsId ? 'PUT' : 'POST';
+  const data = await api(meth, path, body);
   if (data?.success) {
     setStatus('newsFormStatus', '✅ Guardado correctamente', 'green');
-    setTimeout(() => {
-      document.getElementById('newsFormCard').style.display = 'none';
-      editingNewsId = null;
-      loadNews();
-    }, 800);
+    setTimeout(() => { document.getElementById('newsFormCard').style.display = 'none'; editingNewsId = null; loadNews(); }, 800);
   } else {
     setStatus('newsFormStatus', '❌ ' + (data?.error || 'Error'), 'red');
   }
@@ -284,7 +259,7 @@ document.getElementById('newsForm').addEventListener('submit', async e => {
 
 async function deleteNews(id) {
   if (!confirm('¿Eliminar esta noticia?')) return;
-  await api('DELETE', '/news/' + id);
+  await api('DELETE', `/news.php?id=${id}`);
   loadNews();
 }
 
@@ -294,7 +269,7 @@ let editingVideoId = null;
 async function loadVideos() {
   const list = document.getElementById('videosList');
   list.innerHTML = '<div class="loading-msg">Cargando…</div>';
-  const data = await api('GET', '/videos');
+  const data = await api('GET', '/videos.php');
   if (!data?.length) { list.innerHTML = '<div class="empty-msg">No hay videos. Agrega el primero.</div>'; return; }
   list.innerHTML = data.map(v => `
     <div class="list-item">
@@ -318,19 +293,17 @@ document.getElementById('newVideoBtn').addEventListener('click', () => {
   editingVideoId = null;
   document.getElementById('videoFormTitle').textContent = 'Nuevo Video';
   document.getElementById('videoForm').reset();
-  document.getElementById('videoId').value = '';
   document.getElementById('videoFormCard').style.display = '';
   document.getElementById('videoFormCard').scrollIntoView({ behavior: 'smooth' });
 });
-
 document.getElementById('cancelVideoBtn').addEventListener('click', () => {
   document.getElementById('videoFormCard').style.display = 'none';
   editingVideoId = null;
 });
 
 async function editVideo(id) {
-  const all  = await api('GET', '/videos');
-  const item = all.find(x => x.id === id);
+  const all  = await api('GET', '/videos.php');
+  const item = all?.find(x => x.id === id);
   if (!item) return;
   editingVideoId = id;
   document.getElementById('videoFormTitle').textContent = 'Editar Video';
@@ -351,19 +324,12 @@ document.getElementById('videoForm').addEventListener('submit', async e => {
     description: document.getElementById('videoDesc').value,
     published:   document.getElementById('videoPublished').value === '1'
   };
-  let data;
-  if (editingVideoId) {
-    data = await api('PUT', '/videos/' + editingVideoId, body);
-  } else {
-    data = await api('POST', '/videos', body);
-  }
+  const path = editingVideoId ? `/videos.php?id=${editingVideoId}` : '/videos.php';
+  const meth = editingVideoId ? 'PUT' : 'POST';
+  const data = await api(meth, path, body);
   if (data?.success) {
     setStatus('videoFormStatus', '✅ Guardado correctamente', 'green');
-    setTimeout(() => {
-      document.getElementById('videoFormCard').style.display = 'none';
-      editingVideoId = null;
-      loadVideos();
-    }, 800);
+    setTimeout(() => { document.getElementById('videoFormCard').style.display = 'none'; editingVideoId = null; loadVideos(); }, 800);
   } else {
     setStatus('videoFormStatus', '❌ ' + (data?.error || 'Error'), 'red');
   }
@@ -371,7 +337,7 @@ document.getElementById('videoForm').addEventListener('submit', async e => {
 
 async function deleteVideo(id) {
   if (!confirm('¿Eliminar este video?')) return;
-  await api('DELETE', '/videos/' + id);
+  await api('DELETE', `/videos.php?id=${id}`);
   loadVideos();
 }
 
@@ -379,8 +345,8 @@ async function deleteVideo(id) {
 async function loadContacts() {
   const list = document.getElementById('contactsList');
   list.innerHTML = '<div class="loading-msg">Cargando…</div>';
-  const data = await api('GET', '/contacts');
-  if (!data?.length) { list.innerHTML = '<div class="empty-msg">No hay mensajes de contacto todavía.</div>'; return; }
+  const data = await api('GET', '/contacts.php');
+  if (!data?.length) { list.innerHTML = '<div class="empty-msg">No hay mensajes todavía.</div>'; return; }
   list.innerHTML = data.map(c => `
     <div class="contact-item ${c.read ? '' : 'unread'}" id="contact-${c.id}">
       <div class="contact-header">
@@ -400,33 +366,23 @@ async function loadContacts() {
 }
 
 async function markRead(id) {
-  await api('PUT', '/contacts/' + id + '/read');
-  document.getElementById('contact-' + id)?.classList.remove('unread');
-  document.querySelector(`#contact-${id} .unread-dot`)?.remove();
-  document.querySelector(`#contact-${id} button[onclick*="markRead"]`)?.replaceWith(
-    Object.assign(document.createElement('span'), { textContent: '✓ Leído', style: 'font-size:.75rem;color:#64748b' })
-  );
-  loadStats();
+  await api('PUT', `/contacts.php?id=${id}&action=read`);
+  loadContacts(); loadStats();
 }
-
 async function deleteContact(id) {
   if (!confirm('¿Eliminar este mensaje?')) return;
-  await api('DELETE', '/contacts/' + id);
+  await api('DELETE', `/contacts.php?id=${id}`);
   loadContacts(); loadStats();
 }
 
 /* ── Utils ──────────────────────────────────────────────────────────────── */
 function esc(s) {
-  return String(s || '')
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
 function formatDate(s) {
   if (!s) return '';
   return new Date(s).toLocaleDateString('es-PE', { day:'2-digit', month:'short', year:'numeric' });
 }
-
 function setStatus(id, msg, color) {
   const el = document.getElementById(id);
   if (!el) return;
